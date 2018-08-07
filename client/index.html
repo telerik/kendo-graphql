@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>Kendo UI App</title>
+
+        <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2018.2.620/styles/kendo.default-v2.min.css" />
+
+        <script src="http://kendo.cdn.telerik.com/2018.2.620/js/jquery.min.js"></script>
+        <script src="http://kendo.cdn.telerik.com/2018.2.620/js/kendo.all.min.js"></script>
+    </head>
+    <body>
+        <div id="content">
+            <div id="grid"></div>
+        </div>
+
+        <script>
+            var READ_PRODUCTS_QUERY = "query {" +
+                "products { ProductID, ProductName, UnitPrice, UnitsInStock }" +
+            "}";
+
+             var ADD_PRODUCT_QUERY = "mutation AddProduct($ProductName: String!, $UnitPrice: Float!, $UnitsInStock: Float!){" +
+                "AddProduct(ProductName: $ProductName, UnitPrice: $UnitPrice, UnitsInStock: $UnitsInStock ){" +
+                    "ProductID,"+
+                    "ProductName,"+
+                    "UnitPrice,"+
+                    "UnitsInStock"+
+                "}"+
+            "}";
+
+            var UPDATE_PRODUCT_QUERY = "mutation UpdateProduct($ProductID: ID!, $ProductName: String! ,$UnitPrice: Float!, $UnitsInStock: Float!){" +
+                "UpdateProduct(ProductID: $ProductID, ProductName: $ProductName, UnitPrice: $UnitPrice, UnitsInStock: $UnitsInStock){" +
+                    "ProductID," +
+                    "ProductName," +
+                    "UnitPrice," +
+                    "UnitsInStock" +
+                "}" +
+            "}";
+
+            var DELETE_PRODUCT_QUERY = "mutation DeleteProduct($ProductID: ID!){" +
+                "DeleteProduct(ProductID: $ProductID){" +
+                    "ProductID" +
+                "}" +
+            "}";
+
+            $(document).ready(function() {
+                var dataSource = new kendo.data.DataSource({
+                    pageSize: 20,
+                    transport: {
+                        read: {
+                            contentType: "application/json",
+                            url: "http://localhost:3021/graphql",
+                            type: "POST",
+                            data: function() {
+                                return { query: READ_PRODUCTS_QUERY };
+                            }
+                        },
+                        update: {
+                            contentType: "application/json",
+                            url: "http://localhost:3021/graphql",
+                            type: "POST",
+                            data: function(model) {
+                                return {
+                                    query: UPDATE_PRODUCT_QUERY,
+                                    variables: model
+                                };
+                            }
+                        },
+                        destroy: {
+                            contentType: "application/json",
+                            url: "http://localhost:3021/graphql",
+                            type: "POST",
+                            data: function(model) {
+                                return {
+                                    query: DELETE_PRODUCT_QUERY,
+                                    variables: model
+                                };
+                            }
+                        },
+                        create: {
+                            contentType: "application/json",
+                            url: "http://localhost:3021/graphql",
+                            type: "POST",
+                            data: function(model) {
+                                return {
+                                    query: ADD_PRODUCT_QUERY,
+                                    variables: model
+                                };
+                            }
+                        },
+                        parameterMap: function(options, operation) {
+                            return  kendo.stringify(options);
+                        }
+                    },
+                    schema: {
+                        data: function(response) {
+                            var data = response.data;
+
+                            if(data.products) {
+                                return data.products;
+                            } else if(data.AddProduct) {
+                                return data.AddProduct;
+                            } else if(data.UpdateProduct) {
+                                return data.UpdateProduct;
+                            } else if(data.DeleteProduct){
+                                return data.DeleteProduct;
+                            }
+                        },
+                        model: {
+                            id: "ProductID",
+                            fields: {
+                                ProductID: { type: "string", editable: false },
+                                ProductName: { type: "string" },
+                                UnitPrice: { type: "number" },
+                                UnitsInStock: { type: "number" }
+                            }
+                        }
+                    }
+                });
+
+                $("#grid").kendoGrid({
+                    dataSource: dataSource,
+                    height: 550,
+                    groupable: true,
+                    sortable: true,
+                    pageable: true,
+                    toolbar: ["create"],
+                    editable: "inline",
+                    columns: [{
+                        field: "ProductID",
+                        title: "Product ID"
+                    },
+                    {
+                        field: "ProductName",
+                        title: "Product Name"
+                    },
+                    {
+                        field: "UnitPrice",
+                        title: "Unit Price"
+                    },
+                    {
+                        field: "UnitsInStock",
+                        title: "Units in stock"
+                    },
+                    {
+                        command: ["edit", "destroy"],
+                        title: "Options ",
+                        width: "250px"
+                    }]
+                });
+            });
+        </script>
+    </body>
+</html>
