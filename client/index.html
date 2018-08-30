@@ -108,6 +108,9 @@
                                 return data.DeleteProduct;
                             }
                         },
+						total: function(response) {						
+							return response.data.products.length;
+						},
                         model: {
                             id: "ProductID",
                             fields: {
